@@ -4,7 +4,7 @@ import inspect
 from typing import Optional, Callable, TYPE_CHECKING
 from edsl import QuestionFreeText, Results, AgentList, ScenarioList, Scenario, Model
 from edsl.questions import QuestionBase
-from edsl.results import Result
+from edsl.results.result import Result
 from jinja2 import Template
 from edsl.caching import Cache
 
@@ -67,6 +67,7 @@ class Conversation:
         agent_list: AgentList,
         max_turns: int = 20,
         stopping_function: Optional[Callable] = None,
+        start_statement_question: Optional[QuestionBase] = None,
         next_statement_question: Optional[QuestionBase] = None,
         next_speaker_generator: Optional[Callable] = None,
         verbose: bool = False,
@@ -75,7 +76,7 @@ class Conversation:
         cache=None,
         disable_remote_inference=False,
         default_model: Optional[Model] = None,
-        topic: Optional[str] = None,
+        topic: Optional[str] = None #add topic
     ):
         self.disable_remote_inference = disable_remote_inference
         self.per_round_message_template = per_round_message_template
@@ -102,58 +103,21 @@ class Conversation:
         self.agent_statements = AgentStatements()
 
         self.max_turns = max_turns
+        self.topic = topic
 
-        if topic is not None:
-            self.topic = topic
-            import textwrap
-            start_question = textwrap.dedent(
-                """\
-You are {{agent_name}}, engaging in a negotiation with {{other_agent_names}} on the topic: "{{topic}}".
-Your goal is to propose a clear starting position, outline your priorities, and invite a collaborative resolution.
-Avoid being combative; aim for mutual understanding and a potential deal.
-                """
+        self.start_statement_question = start_statement_question
+
+
+        self.next_statement_question = next_statement_question
+        if (
+            per_round_message_template
+            and "{{ round_message }}" not in next_statement_question.question_text
+        ):
+            from edsl.conversation.exceptions import ConversationValueError
+
+            raise ConversationValueError(
+                "If you pass in a per_round_message_template, you must include {{ round_message }} in the question_text."
             )
-            self.start_statement_question = QuestionFreeText(
-                question_text=start_question,
-                question_name="dialogue",
-            )
-        else:
-            self.start_statement_question = None
-            self.topic = None
-
-        if next_statement_question is None:
-            import textwrap
-
-            base_question = textwrap.dedent(
-                """\
-You are {{ agent_name }} in a negotiation with {{ other_agent_name }} about "{{ topic }}".
-Here is the conversation so far:
-
-{{ conversation }}
-
-{% if round_message is not none %}
-Round Info: {{ round_message }}
-{% endif %}
-
-Only YOU should speak now — continue the conversation from your side **only**. Do NOT simulate what the other person might say.
-
-What do you say next to move the discussion forward toward a resolution?
-"""
-            )
-            self.next_statement_question = QuestionFreeText(
-                question_text=base_question,
-                question_name="dialogue",
-            )
-        else:
-            self.next_statement_question = next_statement_question
-            if (
-                per_round_message_template
-                and "{{ round_message }}" not in next_statement_question.question_text
-            ):
-                from edsl.conversation.exceptions import ConversationValueError
-                raise ConversationValueError(
-                    "If you pass in a per_round_message_template, you must include {{ round_message }} in the question_text."
-                )
 
         # Determine how the next speaker is chosen
         if next_speaker_generator is None:
@@ -228,27 +192,27 @@ What do you say next to move the discussion forward toward a resolution?
         return Scenario(d)
 
     async def get_start_statement(self, *, speaker, others, topic) -> "Result":
-      """Get the first statement from the speaker related to the topic"""
-      q = self.start_statement_question
-      from edsl import Scenario
-      s = Scenario(
-          {
-              "agent_name": speaker.name,
-              "other_agent_names": others,
-              "topic": topic,
-              "conversation_index": self.conversation_index,
-              "index": 0,
-              "round_message": None,
-          }
-      )
-      jobs = q.by(s).by(speaker).by(speaker.model)
-      jobs.show_prompts()
-      results = await jobs.run_async(
-          cache=self.cache, disable_remote_inference=self.disable_remote_inference
-      )
-      return results[0]
+        """Get the first statement from the speaker related to the topic"""
+        q = self.start_statement_question
+        from edsl import Scenario
+        s = Scenario(
+            {
+                "agent_name": speaker.name,
+                "other_agent_names": others,
+                "topic": topic,
+                "conversation_index": self.conversation_index,
+                "index": 0,
+                "round_message": None,
+            }
+        )
+        jobs = q.by(s).by(speaker).by(speaker.model)
+        jobs.show_prompts()
+        results = await jobs.run_async(
+            cache = self.cache, disable_remote_inference=self.disable_remote_inference
+        )
+        return results[0]
 
-    async def get_next_statement(self, *, index, speaker, topic, conversation, other_agent_name) -> "Result":
+    async def get_next_statement(self, *, index, speaker, topic, conversation, other_agent_names) -> "Result":
         """Get the next statement from the speaker."""
         q = self.next_statement_question
         # assert q.parameters == {"agent_name", "conversation"}, q.parameters
@@ -268,14 +232,14 @@ What do you say next to move the discussion forward toward a resolution?
                 "conversation": conversation,
                 "conversation_index": self.conversation_index,
                 "index": index,
-                "other_agent_name": other_agent_name,
+                "other_agent_name": other_agent_names,
                 "round_message": round_message,
             }
         )
         jobs = q.by(s).by(speaker).by(speaker.model)
         jobs.show_prompts()
         results = await jobs.run_async(
-            cache=self.cache, disable_remote_inference=self.disable_remote_inference,
+            cache=self.cache, disable_remote_inference=self.disable_remote_inference
         )
         return results[0]
 
@@ -287,24 +251,25 @@ What do you say next to move the discussion forward toward a resolution?
         while await self.continue_conversation():
             speaker = self.next_speaker()
             print(f"Agent {speaker.name} speaking at index: {i}\n")
+
             if (i==0):
-              next_statement = AgentStatement(
-                  statement = await self.get_start_statement(
-                      speaker=speaker,
-                      others=[a.name for a in self.agent_list if a != speaker][0],
-                      topic=self.topic,
-                  )
-              )
+                next_statement = AgentStatement(
+                    statement=await self.get_start_statement(
+                        speaker=speaker,
+                        others=[a.name for a in self.agent_list if a != speaker][0],
+                        topic = self.topic,
+                    )
+                )
             else:
-              next_statement = AgentStatement(
-                  statement=await self.get_next_statement(
-                      index=i,
-                      speaker=speaker,
-                      conversation="\n".join([f"{k}: {v}" for d in self.agent_statements.transcript for k, v in d.items()]),
-                      topic=self.topic,
-                      other_agent_name=[a.name for a in self.agent_list if a != speaker][0]
-                  )
-              )
+                next_statement = AgentStatement(
+                    statement=await self.get_next_statement(
+                        index=i,
+                        speaker=speaker,
+                        conversation="\n".join([f"{k}:{v}" for d in self.agent_statements.transcript for k,v in d.items()]),
+                        topic=self.topic,
+                        other_agent_names=[a.name for a in self.agent_list if a != speaker][0]
+                    )
+                )
             self.agent_statements.append(next_statement)
             if self.verbose:
                 print(f"'{speaker.name}':{next_statement.text}")
