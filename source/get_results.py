@@ -1,12 +1,11 @@
 from edsl import Results
-# from agent_conversation import max_turns
+from agent_conversation import max_turns, agent_1_name, agent_2_name
 import pandas as pd
-import json
 import math
 import re
 import ast
 
-max_turns = 20
+# max_turns = 20
 results_per_page = 10
 total_pages = math.ceil(max_turns / results_per_page)
 results_on_last_page = (max_turns % results_per_page) if (max_turns % results_per_page != 0) else results_per_page
@@ -28,10 +27,6 @@ while(i <= total_pages):
         print(f"Agent Name: {item_dict['agent']}")
 
         try:
-            # resp = item[0]['answer']['dialogue'][10:-3]
-            # print(f"\nagent_resp: {resp}")
-            # json_answer = json.loads(resp)
-
             resp = item[0]['answer']['dialogue']
             cleaned_resp = re.sub(r"^```python|```$", "", resp.strip()).strip()
             json_answer = ast.literal_eval(cleaned_resp)
@@ -41,7 +36,6 @@ while(i <= total_pages):
 
             res_arr.append(item_dict)
         except Exception as e:
-            # print(f"Error in page- {i}, result- {j+1}: {e}")
             print(f"Parsing Response Failed: {e}")
             continue
 
@@ -52,4 +46,5 @@ while(i <= total_pages):
 df = pd.DataFrame(res_arr)
 df.sort_values(by="iteration", inplace=True)
 # print(df.head())
-df.to_csv('output-rice-xi_1.csv', index=False)
+
+df.to_csv(f'output-{agent_1_name}_{agent_2_name}_{max_turns}.csv', index=False)
