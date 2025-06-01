@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Multi-Agent Chat</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    label { display: block; margin-top: 10px; }
+    input, textarea { width: 100%; padding: 8px; margin-top: 4px; }
+    button { margin-top: 20px; padding: 10px 20px; font-size: 16px; }
+    #chat { margin-top: 30px; border: 1px solid #ccc; padding: 10px; max-height: 400px; overflow-y: auto; }
+    .turn { margin-bottom: 12px; }
+    .agent { font-weight: bold; }
+  </style>
+</head>
+<body>
+
+  <h1>Multi-Agent Conversation Setup</h1>
+  <form id="agentForm">
+    <label>
+      Agent 1 Name:
+      <input type="text" id="agent1Name" required />
+    </label>
+    <label>
+      Agent 1 Description:
+      <textarea id="agent1Desc" rows="2" required></textarea>
+    </label>
+    <label>
+      Agent 2 Name:
+      <input type="text" id="agent2Name" required />
+    </label>
+    <label>
+      Agent 2 Description:
+      <textarea id="agent2Desc" rows="2" required></textarea>
+    </label>
+    <label>
+      Conversation Topic:
+      <input type="text" id="topic" required />
+    </label>
+    <label>
+      Maximum Turns:
+      <input type="number" id="turns" min="1" value="3" required />
+    </label>
+    <button type="submit">Start Conversation</button>
+  </form>
+
+  <div id="chat" style="display:none;">
+    <h2>Conversation</h2>
+    <div id="chatContent"></div>
+  </div>
+  <button id="downloadBtn" style="display:none;">Download CSV</button>
+
+
+  <script>
+    const form = document.getElementById('agentForm');
+    const chatDiv = document.getElementById('chat');
+    const chatContent = document.getElementById('chatContent');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const downloadBtn = document.getElementById('downloadBtn');
+
+      // Collect form data
+      const data = {
+        turns: document.getElementById('turns').value.trim(),
+        topic: document.getElementById('topic').value.trim(),
+        agent_params: [
+          {
+            agent_name: document.getElementById('agent1Name').value.trim(),
+            agent_description: document.getElementById('agent1Desc').value.trim()
+          },
+          {
+            agent_name: document.getElementById('agent2Name').value.trim(),
+            agent_description: document.getElementById('agent2Desc').value.trim()
+          }
+        ]
+      };
+
+      chatContent.innerHTML = '<p>Loading conversation...</p>';
+      chatDiv.style.display = 'block';
+
+      try {
+        const res = await fetch('http://localhost:8000/run', {
+          method: 'post',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify(data),
+        });
+
+        if (!res.ok) {
+          throw new Error(`Server error: ${res.statusText}`);
+        }
+
+        const result = await res.json();
+
+        chatContent.innerHTML = `<p><strong>${result.message}</strong></p><p>CSV File: ${result.file}</p>`;
+
+        result.conversation.forEach((turn, index) => {
+          const div = document.createElement('div');
+          div.classList.add('turn');
+
+          const sourcesHTML = turn.sources.map(src => `
+            <div style="margin-left:20px; font-size: 0.9em;">
+              <strong>${src.title}</strong> (${src.type})<br/>
+              <em>"${src.quote}"</em><br/>
+              <small>${src.explanation}</small><br/>
+              <a href="${src.url}" target="_blank">${src.url}</a>
+            </div>
+          `).join('');
+
+          div.innerHTML = `
+            <span class="agent">${turn.agent} (Turn ${turn.iteration}):</span>
+            <p>${turn.answer}</p>
+            <details><summary>Sources</summary>${sourcesHTML}</details>
+          `;
+
+          chatContent.appendChild(div);
+        });
+
+        // Show download button
+        downloadBtn.style.display = 'inline-block';
+        downloadBtn.onclick = () => {
+          const filename = result.file;  // assuming result.file is like 'output-abc.csv'
+          fetch(`http://localhost:8000/download?filename=${encodeURIComponent(filename)}`)
+            .then(response => {
+              if (!response.ok) {
+                throw new Error("File download failed");
+              }
+              return response.blob();
+            })
+            .then(blob => {
+              const url = window.URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.href = url;
+              a.download = filename;
+              document.body.appendChild(a);
+              a.click();
+              a.remove();
+              window.URL.revokeObjectURL(url);
+            })
+            .catch(err => {
+              alert("Download error: " + err.message);
+            });
+        };
+
+
+        // const conversation = await res.json();
+
+        // chatContent.innerHTML = ''; // Clear loading
+
+        // conversation.forEach((turn, index) => {
+        //   const div = document.createElement('div');
+        //   div.classList.add('turn');
+        //   div.innerHTML = `<span class="agent">${turn.agent}:</span> ${turn.message}`;
+        //   chatContent.appendChild(div);
+        // });
+
+        // const result = await res.json();
+        // chatContent.innerHTML = `<p><strong>${result.message}</strong></p><p>CSV File: ${result.file}</p>`;
+
+
+      } catch (err) {
+        chatContent.innerHTML = `<p style="color:red;">${err.message}</p>`;
+      }
+    });
+  </script>
+</body>
+</html>
