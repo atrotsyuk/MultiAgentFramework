@@ -1,4 +1,5 @@
 .DS_Store
-app/output.html
-app/tmp*
+app/backend/output.html
+app/backend/tmp*
 app/backend/static/*
+.env
