@@ -42,7 +42,7 @@ class AgentManager:
 
             # save agent to a json file
             try:
-                agent_json_path = os.path.join("source", "agents", f"{str(agent_uuid)}.json")
+                agent_json_path = os.path.join("app", "backend", "source", "agents", f"{str(agent_uuid)}.json")
                 
                 # Ensure directory exists
                 os.makedirs(os.path.dirname(agent_json_path), exist_ok=True)

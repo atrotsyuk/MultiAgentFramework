@@ -16,7 +16,7 @@ def group_transcripts_by_speaker(raw_text: str) -> dict:
 
 
 import os
-TRANSCRIPT_FOLDER = os.path.join("static", "transcripts")
+TRANSCRIPT_FOLDER = os.path.join("app", "backend", "static", "transcripts")
 def load_all_transcripts():
     transcripts = {}
     for filename in os.listdir(TRANSCRIPT_FOLDER):
