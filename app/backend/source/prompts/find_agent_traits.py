@@ -20,5 +20,7 @@ The output must be in a form of python dict:
 
 Examples:
 {{example_traits}}
+
+**ONLY return the output in the desired format. Do not print/return anything else
 """
 )

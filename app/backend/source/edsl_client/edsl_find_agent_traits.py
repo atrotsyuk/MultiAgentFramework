@@ -1,7 +1,8 @@
 import re
+# import ast
 from edsl import Model, QuestionFreeText, Scenario
-from backend.source.prompts.find_agent_traits import create_agent_text
-from backend.source.examples.traits import example_traits
+from source.prompts.find_agent_traits import create_agent_text
+from source.examples.traits import example_traits
 
 class EdslAgent:
     def __init__(self, model_name="google/gemma-2-9b-it", service_name=None, examples=None):
@@ -9,7 +10,23 @@ class EdslAgent:
         self.create_agent_text = create_agent_text
         self.examples = examples or example_traits
 
+    def extract_dict_from_code_block(self, code_str: str) -> dict:
+        # Step 1: Remove ```python ... ``` code block
+        code_cleaned = re.sub(r"^```(?:python)?\s*|\s*```$", "", code_str.strip())
+        # print(code_cleaned)
+
+        # Step 2: Extract dict portion from 'var = {...}' format
+        match = re.search(r"=\s*(\{.*\})\s*$", code_cleaned, re.DOTALL)
+        if match:
+            dict_str = match.group(1)
+        else:
+            dict_str = code_cleaned  # fallback if it's already just a dict
+
+        # print(dict_str)
+        return dict_str
+
     def find(self, agent_name: str, agent_description: str) -> str:
+        print(f"Finding traits for agent: {agent_name}")
         question = QuestionFreeText(
             question_text=self.create_agent_text,
             question_name="create_agent_q"
@@ -23,49 +40,12 @@ class EdslAgent:
 
         response = question.by(scenario).by(self.model).run()
         traits_code = response[0]["answer"]["create_agent_q"]
-        cleaned = re.sub(r"^```python|```$", "", traits_code.strip()).strip()
-
-        return cleaned
+        try:
+            cleaned = self.extract_dict_from_code_block(traits_code)
+        except Exception as e:
+          print(f"Fetching agent {agent_name} failed")
+          cleaned = str({"name": agent_name, "traits": {"persona": agent_description}})
+        finally:
+          return cleaned
 
 edsl_find_agent = EdslAgent()
-
-
-
-
-
-
-# import textwrap
-# from edsl import Model, QuestionFreeText, Scenario
-# import re
-
-# from examples.traits import example_traits
-
-# from prompts.find_agent_traits import create_agent_text
-
-# # edsl_model = Model(model_name="google/gemma-2-9b-it", service_name='deep_infra')
-# edsl_model = Model(model_name="google/gemma-2-9b-it")
-
-
-# def find_agent_traits(agent_name, agent_description, examples= example_traits):
-#     create_agent_text = create_agent_text
-#     find_agent = QuestionFreeText(
-#         question_text = create_agent_text,
-#         question_name = "create_agent_q"
-#     )
-
-#     find_agent_sc = Scenario(
-#         {
-#             "agent_name": agent_name,
-#             "agent_description": agent_description,
-#             "example_trais": example_traits
-#         }
-#     )
-
-#     resp = find_agent.by(find_agent_sc).by(edsl_model).run()
-#     traits = resp[0]["answer"]["create_agent_q"]
-#     cleaned_resp = re.sub(r"^```python|```$", "", traits.strip()).strip()
-#     # print(f"--------agent {agent_name} traits------:\n {cleaned_resp}\n")
-#     return cleaned_resp
-
-# # find_agent_traits("Narendra Modi", "Prime Minister of India")
-# # find_agent_traits("Sashi Tharoor", "MP from Kerala, Senior member of Congress")

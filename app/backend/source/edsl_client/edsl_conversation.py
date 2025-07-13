@@ -76,8 +76,10 @@ class Conversation:
         cache=None,
         disable_remote_inference=False,
         default_model: Optional[Model] = None,
-        topic: Optional[str] = None #add topic
+        topic: Optional[str] = None,
+        transcript: Optional[str] = None
     ):
+        print("initializing conversation")
         self.disable_remote_inference = disable_remote_inference
         self.per_round_message_template = per_round_message_template
 
@@ -118,6 +120,8 @@ class Conversation:
             raise ConversationValueError(
                 "If you pass in a per_round_message_template, you must include {{ round_message }} in the question_text."
             )
+
+        self.agent_transcript = transcript
 
         # Determine how the next speaker is chosen
         if next_speaker_generator is None:
@@ -234,6 +238,7 @@ class Conversation:
                 "index": index,
                 "other_agent_names": other_agent_names,
                 "round_message": round_message,
+                "agent_transcript": self.agent_transcript
             }
         )
         jobs = q.by(s).by(speaker).by(speaker.model)

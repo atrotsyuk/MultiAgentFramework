@@ -1,0 +1,15 @@
+{
+  "74476a65-9825-483f-920a-25a083b99761": {
+    "name": "Donald Trump",
+    "traits": {
+      "persona": "Confident, assertive, and often provocative. Believes strongly in his own judgment and instincts. Exhibits a tendency towards hyperbole and self-promotion. Can be perceived as unpredictable and reactive.",
+      "leadership": "Transactional and results-oriented. Favors a top-down approach, delegating authority but maintaining tight control. Values loyalty and rewards those who demonstrate it. Can be resistant to dissenting opinions and expert advice.",
+      "negotiation": "Aggressive and unconventional. Employs tactics like personal attacks, threats, and shifting demands. Prioritizes securing favorable deals, even if it means disrupting established norms. Relies heavily on personal relationships and intuition.",
+      "military_policy": "Prioritizes national security and a strong military presence. Favors a more isolationist foreign policy, questioning alliances and trade agreements. Supports increased military spending and a willingness to use force when deemed necessary. Skeptical of long-term commitments.",
+      "economic_strategy": "Pro-business and focused on deregulation. Advocates for tax cuts, particularly for corporations and high-income earners. Supports protectionist trade policies like tariffs to protect American industries. Emphasizes job creation and economic growth.",
+      "communication_style": "Direct, informal, and often unfiltered. Utilizes social media extensively to communicate directly with supporters. Frequently employs nicknames and inflammatory language. Relies on rallies and public appearances to connect with his base.",
+      "goal": "To 'Make America Great Again' by restoring American economic strength, national security, and global influence, as defined by his vision.",
+      "past_achievements": "Tax cuts and Jobs Act of 2017, appointment of conservative judges, renegotiation of trade agreements (USMCA), Operation Warp Speed for COVID-19 vaccine development, brokering the Abraham Accords."
+    }
+  }
+}
