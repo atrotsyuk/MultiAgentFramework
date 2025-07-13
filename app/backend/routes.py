@@ -5,8 +5,8 @@ from fastapi import APIRouter, HTTPException, Request, Query, UploadFile, File
 import os, shutil
 from fastapi.responses import FileResponse
 
-from source.tools.conversation_results_manager import ConversationResultExtractor
-from source.tools.agent_manager import agent_manager
+from app.backend.source.tools.conversation_results_manager import ConversationResultExtractor
+from app.backend.source.tools.agent_manager import agent_manager
 
 
 class AgentParam(BaseModel):
@@ -22,9 +22,9 @@ class ConversationRequest(BaseModel):
 
 router = APIRouter()
 # Serve index.html on root path
-@router.get("/")
-async def serve_index():
-    return "App Running"
+# @router.get("/")
+# async def serve_index():
+#     return "App Running"
 
 
 @router.post("/create-agents")

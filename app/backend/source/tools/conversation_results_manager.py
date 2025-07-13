@@ -4,8 +4,8 @@ import ast
 import os
 import pandas as pd
 from edsl import Results
-from source.tools.conversation_manager import ConversationManager
-from source.tools.agent_manager import agent_manager
+from app.backend.source.tools.conversation_manager import ConversationManager
+from app.backend.source.tools.agent_manager import agent_manager
 
 class ConversationResultExtractor:
     def __init__(self, agent_uuids, topic, max_turns=3, results_per_page=10):

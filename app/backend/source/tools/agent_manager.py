@@ -1,6 +1,6 @@
 import ast
 from edsl import Agent, AgentList
-from source.edsl_client.edsl_find_agent_traits import edsl_find_agent
+from app.backend.source.edsl_client.edsl_find_agent_traits import edsl_find_agent
 from typing import List, Dict
 import uuid
 import os
@@ -64,7 +64,7 @@ class AgentManager:
 
     def get_agents_list(self):
         agents_data = []
-        directory = os.path.join("source", "agents")
+        directory = os.path.join("app", "backend", "source", "agents")
         # List all JSON files
         for filename in os.listdir(directory):
             if filename.endswith(".json"):

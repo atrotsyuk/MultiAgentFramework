@@ -1,10 +1,10 @@
 from typing import List
 from edsl import Model, QuestionFreeText, Agent, AgentList
 
-from source.edsl_client.edsl_conversation import Conversation
-from source.tools.agent_manager import agent_manager
-from source.prompts import start_statement, next_statement_template, per_round_message_template
-from source.utils import load_all_transcripts
+from app.backend.source.edsl_client.edsl_conversation import Conversation
+from app.backend.source.tools.agent_manager import agent_manager
+from app.backend.source.prompts import start_statement, next_statement_template, per_round_message_template
+from app.backend.source.utils import load_all_transcripts
 
 class ConversationManager:
     def __init__(self, max_turns: int, agent_uuids: List[str], topic: str, model_name="google/gemma-2-9b-it", service_name="deep_infra"):

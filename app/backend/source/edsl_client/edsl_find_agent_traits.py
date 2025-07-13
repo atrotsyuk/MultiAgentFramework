@@ -1,8 +1,8 @@
 import re
 # import ast
 from edsl import Model, QuestionFreeText, Scenario
-from source.prompts.find_agent_traits import create_agent_text
-from source.examples.traits import example_traits
+from app.backend.source.prompts.find_agent_traits import create_agent_text
+from app.backend.source.examples.traits import example_traits
 
 class EdslAgent:
     def __init__(self, model_name="google/gemma-2-9b-it", service_name=None, examples=None):
