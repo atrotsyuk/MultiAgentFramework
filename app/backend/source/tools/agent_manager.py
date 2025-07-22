@@ -5,6 +5,7 @@ from typing import List, Dict
 import uuid
 import os
 import json
+from pathlib import Path
 
 class AgentManager:
     def __init__(self):
@@ -84,7 +85,47 @@ class AgentManager:
 
                 except Exception as e:
                     print(f"Error reading {filename}: {e}")
-        
+
+        agents_data.extend(self.import_agents_from_genagents())
+        return agents_data
+
+    def import_agents_from_genagents(self):
+        agents_data = []
+
+        base_path = Path(__file__).resolve().parent.parent.parent.parent.parent.parent
+        print(base_path)
+        target_path = base_path / "genagents" / "agent_bank" / "populations" / "gss_agents"
+        print(target_path)
+
+        # Make sure the path exists
+        if not target_path.exists():
+            print(f"❌ Path does not exist: {target_path}")
+        else:
+            print(f"✅ Searching in: {target_path}")
+
+            # Loop through subdirectories (assuming UUID-named folders)
+            for subdir in target_path.iterdir():
+                if subdir.is_dir():
+                    agent_id = str(subdir.absolute()).split('/')[-1]
+                    # print("agent_id", agent_id)
+                    scratch_file = subdir / "scratch.json"
+                    if scratch_file.exists():
+                        try:
+                            with open(scratch_file, 'r') as f:
+                                data = json.load(f)
+                                # print(f"📄 Read from {scratch_file}:")
+                                # print(json.dumps(data, indent=2))
+
+                                agent_entry = {
+                                    "uuid": agent_id,
+                                    "name": data['first_name'] + ' ' + data['last_name'],
+                                    "traits": data
+                                }
+                                agents_data.append(agent_entry)
+                        except Exception as e:
+                            print(f"⚠️ Failed to read {scratch_file}: {e}")
+                    else:
+                        print(f"❌ scratch.json not found in {subdir}")
         return agents_data
 
 agent_manager = AgentManager()

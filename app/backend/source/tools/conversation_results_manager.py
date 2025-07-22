@@ -73,7 +73,7 @@ class ConversationResultExtractor:
         if self.df is None:
             raise ValueError("No results found. Run fetch_and_parse_results() first.")
         
-        agent_list = agent_manager.get_agents_list()
+        # agent_list = agent_manager.get_agents_list()
 
         # agent_1_name = self.agent_params[0]['agent_name']
         # agent_2_name = self.agent_params[1]['agent_name']

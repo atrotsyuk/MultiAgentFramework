@@ -10,9 +10,16 @@
 # Stage 2: Backend (FastAPI)
 FROM python:3.11.13-slim
 
-WORKDIR /app
+# WORKDIR /MultiAgentFramework/app
+WORKDIR /MultiAgentFramework
 COPY app/backend/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
+
+# Install git and clone the genagents repo
+RUN apt-get update && apt-get install -y git && \
+    git clone https://github.com/joonspk-research/genagents /genagents && \
+    apt-get remove -y git && apt-get autoremove -y && rm -rf /var/lib/apt/lists/*
+
 
 COPY app/ app/
 COPY .env .env
